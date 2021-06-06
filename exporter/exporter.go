@@ -69,6 +69,7 @@ var (
 // the prometheus metrics package.
 type Exporter struct {
 	service   *adexchangebuyer.Service
+	bidderID  string
 	filterSet string
 	timeout   time.Duration
 	mutex     sync.RWMutex
@@ -99,6 +100,7 @@ func NewExporter(serviceAccount, bidderID string, timeout time.Duration, logger 
 
 	return &Exporter{
 		service:   svc,
+		bidderID:  bidderID,
 		filterSet: createdBidderFilterSet.Name,
 		timeout:   timeout,
 		up: prometheus.NewGauge(prometheus.GaugeOpts{
@@ -138,6 +140,24 @@ func initMetricsWithStatuses() {
 	for _, v := range nonBillableWinningBidsStatuses {
 		nonBillableWinningBidsMetrics[v.idx] = newMetric("non_billable_winning_bids_total", "", "Total number of non billable winning bids", prometheus.CounterValue, prometheus.Labels{"reason": v.reason})
 	}
+}
+
+func (e *Exporter) refreshFilterSet() {
+	go func() {
+		t := time.NewTicker(time.Minute * 45)
+		for range t.C {
+			bidderFilterSet := &adexchangebuyer.FilterSet{
+				Name:              fmt.Sprintf("bidders/%s/filterSets/_Exporter_FilterSet_%d", e.bidderID, time.Now().Unix()),
+				RealtimeTimeRange: &adexchangebuyer.RealtimeTimeRange{StartTimestamp: time.Now().Format(time.RFC3339)},
+			}
+			createdBidderFilterSet, err := e.service.Bidders.FilterSets.Create(fmt.Sprintf("bidders/%s", e.bidderID), bidderFilterSet).IsTransient(true).Do()
+			if err != nil {
+				level.Error(e.logger).Log("msg", "Error creating filterSet", "err", err)
+				return
+			}
+			e.filterSet = createdBidderFilterSet.Name
+		}
+	}()
 }
 
 // Describe describes all the metrics ever exported by the Ad Exchange Buyer API exporter.
