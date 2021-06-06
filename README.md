@@ -2,6 +2,10 @@
 
 This is an exporter for the Google Ad Exchange Buyer API II. It exports all of the available metrics from the API, in order to allow you to build a view similar to the RTB Breakout Troubleshooting view in the Realtime Bidding Console.
 
+In order to use this properly, you must first start by requesting a higher quota for the Ad Exchange Buyer API II. The base quota only allows 1000 queries per day, which is not enough if you want to be scraping near-realtime metrics. See [this page](https://developers.google.com/authorized-buyers/apis/limits) for more details of how to request a quota upgrade.
+
+Each scrape of the metrics currently makes 8 requests to the API, and the default setting is to scrape once every 10 seconds. In order to have a high enough quota, I recommend requesting an increase to 100,000 requests per day for the __"RTB Troubleshooting per day"__ quota.
+
 ## Getting Started
 
 To run it:
