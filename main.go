@@ -22,7 +22,7 @@ const ExporterName = exporter.Namespace + "_exporter"
 func main() {
 	var (
 		webConfig      = webflag.AddFlags(kingpin.CommandLine)
-		listenAddress  = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry.").Default(":9101").String()
+		listenAddress  = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry.").Default(":9835").String()
 		metricsPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 		serviceAccount = kingpin.Flag("google.service-account", "The service account to use in order to get the api data.").Default("").String()
 		bidderID       = kingpin.Flag("google.bidder-id", "The bidder ID to use in order to get the api data.").Default("").String()
