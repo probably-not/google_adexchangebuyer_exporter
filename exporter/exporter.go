@@ -146,6 +146,8 @@ func (e *Exporter) refreshFilterSet() {
 	go func() {
 		t := time.NewTicker(time.Minute * 45)
 		for range t.C {
+			level.Info(e.logger).Log("msg", "Refreshing the filterset name")
+
 			bidderFilterSet := &adexchangebuyer.FilterSet{
 				Name:              fmt.Sprintf("bidders/%s/filterSets/_Exporter_FilterSet_%d", e.bidderID, time.Now().Unix()),
 				RealtimeTimeRange: &adexchangebuyer.RealtimeTimeRange{StartTimestamp: time.Now().Format(time.RFC3339)},
