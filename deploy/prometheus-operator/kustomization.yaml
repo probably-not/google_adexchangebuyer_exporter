@@ -1,0 +1,6 @@
+resources:
+  - ../base
+  - service.yaml
+  - service_monitor.yaml
+generatorOptions:
+  disableNameSuffixHash: true

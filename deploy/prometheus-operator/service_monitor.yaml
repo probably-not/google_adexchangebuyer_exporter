@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: google-adexchangebuyer-exporter
+    section: general
+  name: google-adexchangebuyer-exporter
+spec:
+  endpoints:
+    - interval: 10s
+      port: metrics
+      honorLabels: true
+  jobLabel: app
+  selector:
+    matchLabels:
+      app: google-adexchangebuyer-exporter

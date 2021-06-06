@@ -1,0 +1,6 @@
+resources:
+  - ../base
+patchesStrategicMerge:
+  - deployment_patch.yaml
+generatorOptions:
+  disableNameSuffixHash: true
