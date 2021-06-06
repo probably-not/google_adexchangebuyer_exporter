@@ -38,6 +38,7 @@ func main() {
 
 	level.Info(logger).Log("msg", "Starting exporter", "name", ExporterName, "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "context", version.BuildContext())
+	level.Info(logger).Log("msg", "Flags", "listenAddress", *listenAddress, "metricsPath", *metricsPath, "serviceAccount", *serviceAccount, "bidderID", *bidderID, "apiTimeout", *apiTimeout)
 
 	exporter, err := exporter.NewExporter(*serviceAccount, *bidderID, *apiTimeout, logger)
 	if err != nil {
