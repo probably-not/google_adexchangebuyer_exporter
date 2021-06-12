@@ -74,9 +74,9 @@ type Exporter struct {
 	timeout   time.Duration
 	mutex     sync.RWMutex
 
-	up                                  prometheus.Gauge
-	totalScrapes, responseParseFailures prometheus.Counter
-	logger                              log.Logger
+	up                                                 prometheus.Gauge
+	totalScrapes, totalRequests, responseParseFailures prometheus.Counter
+	logger                                             log.Logger
 }
 
 // NewExporter returns an initialized Exporter.
@@ -112,6 +112,11 @@ func NewExporter(serviceAccount, bidderID string, timeout time.Duration, logger 
 			Namespace: Namespace,
 			Name:      "exporter_scrapes_total",
 			Help:      "Current total Ad Exchange Buyer API scrapes.",
+		}),
+		totalRequests: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: Namespace,
+			Name:      "exporter_requests_total",
+			Help:      "Current total Ad Exchange Buyer API requests.",
 		}),
 		responseParseFailures: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: Namespace,
@@ -200,6 +205,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- adexchangebuyerInfo
 	ch <- adexchangebuyerUp
 	ch <- e.totalScrapes.Desc()
+	ch <- e.totalRequests.Desc()
 	ch <- e.responseParseFailures.Desc()
 }
 
@@ -213,6 +219,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	ch <- prometheus.MustNewConstMetric(adexchangebuyerUp, prometheus.GaugeValue, up)
 	ch <- e.totalScrapes
+	ch <- e.totalRequests
 	ch <- e.responseParseFailures
 }
 
