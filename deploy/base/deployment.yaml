@@ -19,7 +19,7 @@ spec:
       serviceAccountName: google-adexchangebuyer-exporter
       containers:
         - name: google-adexchangebuyer-exporter
-          image: probablynot/google-adexchangebuyer-exporter:c7a2053ae0014c693f2185e099f5eff91a672149
+          image: probablynot/google-adexchangebuyer-exporter:latest
           command: ["./google-adexchangebuyer-exporter"]
           args:
             - --google.service-account=$(GOOGLE_SERVICE_ACCOUNT)
