@@ -98,7 +98,7 @@ func NewExporter(serviceAccount, bidderID string, timeout time.Duration, logger 
 
 	initMetricsWithStatuses()
 
-	return &Exporter{
+	e := &Exporter{
 		service:   svc,
 		bidderID:  bidderID,
 		filterSet: createdBidderFilterSet.Name,
@@ -124,7 +124,11 @@ func NewExporter(serviceAccount, bidderID string, timeout time.Duration, logger 
 			Help:      "Number of errors while parsing responses.",
 		}),
 		logger: logger,
-	}, nil
+	}
+
+	e.refreshFilterSet()
+
+	return e, nil
 }
 
 func initMetricsWithStatuses() {
@@ -151,6 +155,7 @@ func (e *Exporter) refreshFilterSet() {
 	go func() {
 		t := time.NewTicker(time.Minute * 45)
 		for range t.C {
+			e.mutex.Lock()
 			level.Info(e.logger).Log("msg", "Refreshing the filterset name")
 
 			bidderFilterSet := &adexchangebuyer.FilterSet{
@@ -160,9 +165,11 @@ func (e *Exporter) refreshFilterSet() {
 			createdBidderFilterSet, err := e.service.Bidders.FilterSets.Create(fmt.Sprintf("bidders/%s", e.bidderID), bidderFilterSet).IsTransient(true).Do()
 			if err != nil {
 				level.Error(e.logger).Log("msg", "Error creating filterSet", "err", err)
-				return
+				e.mutex.Unlock()
+				continue
 			}
 			e.filterSet = createdBidderFilterSet.Name
+			e.mutex.Unlock()
 		}
 	}()
 }
