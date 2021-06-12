@@ -282,6 +282,8 @@ func (e *Exporter) exportBids(ch chan<- prometheus.Metric) error {
 		return err
 	}
 
+	e.totalRequests.Inc()
+
 	for _, v := range response.BidMetricsRows {
 		e.exportMetric(ch, bidsMetrics[1], v.Bids)
 		e.exportMetric(ch, bidsMetrics[2], v.BidsInAuction)
@@ -302,6 +304,8 @@ func (e *Exporter) exportBidResponseErrors(ch chan<- prometheus.Metric) error {
 		return err
 	}
 
+	e.totalRequests.Inc()
+
 	for _, v := range response.CalloutStatusRows {
 		e.exportMetric(ch, bidResponseErrorMetrics[int(v.CalloutStatusId)], v.ImpressionCount)
 	}
@@ -315,6 +319,8 @@ func (e *Exporter) exportBidResponsesWithoutBids(ch chan<- prometheus.Metric) er
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API for Bid Responses Without Bids", "err", err)
 		return err
 	}
+
+	e.totalRequests.Inc()
 
 	for _, v := range response.BidResponseWithoutBidsStatusRows {
 		e.exportMetric(ch, bidResponsesWithoutBidsMetrics[bidResponsesWithoutBidsStatuses[v.Status].idx], v.ImpressionCount)
@@ -330,6 +336,8 @@ func (e *Exporter) exportFilteredBidRequests(ch chan<- prometheus.Metric) error 
 		return err
 	}
 
+	e.totalRequests.Inc()
+
 	for _, v := range response.CalloutStatusRows {
 		e.exportMetric(ch, filteredBidRequestsMetrics[int(v.CalloutStatusId)], v.ImpressionCount)
 	}
@@ -344,6 +352,8 @@ func (e *Exporter) exportFilteredBids(ch chan<- prometheus.Metric) error {
 		return err
 	}
 
+	e.totalRequests.Inc()
+
 	for _, v := range response.CreativeStatusRows {
 		e.exportMetric(ch, filteredBidsMetrics[int(v.CreativeStatusId)], v.BidCount)
 	}
@@ -357,6 +367,8 @@ func (e *Exporter) exportImpressionMetrics(ch chan<- prometheus.Metric) error {
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API for Impression Metrics", "err", err)
 		return err
 	}
+
+	e.totalRequests.Inc()
 
 	for _, v := range response.ImpressionMetricsRows {
 		e.exportMetric(ch, impressionsMetrics[1], v.AvailableImpressions)
@@ -376,6 +388,8 @@ func (e *Exporter) exportLosingBids(ch chan<- prometheus.Metric) error {
 		return err
 	}
 
+	e.totalRequests.Inc()
+
 	for _, v := range response.CreativeStatusRows {
 		e.exportMetric(ch, losingBidsMetrics[int(v.CreativeStatusId)], v.BidCount)
 	}
@@ -389,6 +403,8 @@ func (e *Exporter) exportNonBillableWinningBids(ch chan<- prometheus.Metric) err
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API for Non-Billable Winning Bids", "err", err)
 		return err
 	}
+
+	e.totalRequests.Inc()
 
 	for _, v := range response.NonBillableWinningBidStatusRows {
 		e.exportMetric(ch, nonBillableWinningBidsMetrics[nonBillableWinningBidsStatuses[v.Status].idx], v.BidCount)
