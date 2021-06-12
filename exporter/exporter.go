@@ -74,9 +74,10 @@ type Exporter struct {
 	timeout   time.Duration
 	mutex     sync.RWMutex
 
-	up                                                 prometheus.Gauge
-	totalScrapes, totalRequests, responseParseFailures prometheus.Counter
-	logger                                             log.Logger
+	up                                    prometheus.Gauge
+	totalScrapes, totalRequests           prometheus.Counter
+	responseParseFailures, scrapeFailures prometheus.Counter
+	logger                                log.Logger
 }
 
 // NewExporter returns an initialized Exporter.
@@ -122,6 +123,11 @@ func NewExporter(serviceAccount, bidderID string, timeout time.Duration, logger 
 			Namespace: Namespace,
 			Name:      "exporter_response_parse_failures_total",
 			Help:      "Number of errors while parsing responses.",
+		}),
+		scrapeFailures: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: Namespace,
+			Name:      "exporter_scrape_failures_total",
+			Help:      "Number of errors while scraping the Ad Exchange Buyer API.",
 		}),
 		logger: logger,
 	}
@@ -214,6 +220,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.totalScrapes.Desc()
 	ch <- e.totalRequests.Desc()
 	ch <- e.responseParseFailures.Desc()
+	ch <- e.scrapeFailures.Desc()
 }
 
 // Collect fetches the stats from configured Ad Exchange Buyer API account
@@ -228,6 +235,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- e.totalScrapes
 	ch <- e.totalRequests
 	ch <- e.responseParseFailures
+	ch <- e.scrapeFailures
 }
 
 func (e *Exporter) scrape(ch chan<- prometheus.Metric) (up float64) {
@@ -286,6 +294,7 @@ func (e *Exporter) exportBids(ch chan<- prometheus.Metric) error {
 	response, err := e.service.Bidders.FilterSets.BidMetrics.List(e.filterSet).Do()
 	if err != nil {
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API for Bid Metrics", "err", err)
+		e.scrapeFailures.Inc()
 		return err
 	}
 
@@ -308,6 +317,7 @@ func (e *Exporter) exportBidResponseErrors(ch chan<- prometheus.Metric) error {
 	response, err := e.service.Bidders.FilterSets.BidResponseErrors.List(e.filterSet).Do()
 	if err != nil {
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API Bid Response Errors", "err", err)
+		e.scrapeFailures.Inc()
 		return err
 	}
 
@@ -324,6 +334,7 @@ func (e *Exporter) exportBidResponsesWithoutBids(ch chan<- prometheus.Metric) er
 	response, err := e.service.Bidders.FilterSets.BidResponsesWithoutBids.List(e.filterSet).Do()
 	if err != nil {
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API for Bid Responses Without Bids", "err", err)
+		e.scrapeFailures.Inc()
 		return err
 	}
 
@@ -340,6 +351,7 @@ func (e *Exporter) exportFilteredBidRequests(ch chan<- prometheus.Metric) error 
 	response, err := e.service.Bidders.FilterSets.FilteredBidRequests.List(e.filterSet).Do()
 	if err != nil {
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API for Filtered Bid Requests", "err", err)
+		e.scrapeFailures.Inc()
 		return err
 	}
 
@@ -356,6 +368,7 @@ func (e *Exporter) exportFilteredBids(ch chan<- prometheus.Metric) error {
 	response, err := e.service.Bidders.FilterSets.FilteredBids.List(e.filterSet).Do()
 	if err != nil {
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API for Filtered Bids", "err", err)
+		e.scrapeFailures.Inc()
 		return err
 	}
 
@@ -372,6 +385,7 @@ func (e *Exporter) exportImpressionMetrics(ch chan<- prometheus.Metric) error {
 	response, err := e.service.Bidders.FilterSets.ImpressionMetrics.List(e.filterSet).Do()
 	if err != nil {
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API for Impression Metrics", "err", err)
+		e.scrapeFailures.Inc()
 		return err
 	}
 
@@ -392,6 +406,7 @@ func (e *Exporter) exportLosingBids(ch chan<- prometheus.Metric) error {
 	response, err := e.service.Bidders.FilterSets.LosingBids.List(e.filterSet).Do()
 	if err != nil {
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API for Losing Bids", "err", err)
+		e.scrapeFailures.Inc()
 		return err
 	}
 
@@ -408,6 +423,7 @@ func (e *Exporter) exportNonBillableWinningBids(ch chan<- prometheus.Metric) err
 	response, err := e.service.Bidders.FilterSets.NonBillableWinningBids.List(e.filterSet).Do()
 	if err != nil {
 		level.Error(e.logger).Log("msg", "Can't scrape Ad Exchange Buyer API for Non-Billable Winning Bids", "err", err)
+		e.scrapeFailures.Inc()
 		return err
 	}
 
