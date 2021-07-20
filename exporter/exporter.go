@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -14,6 +15,8 @@ import (
 )
 
 const Namespace = "google_adexchangebuyerapi" // For Prometheus metrics.
+
+var ErrUnknownMetric = errors.New("unknown metric")
 
 type metricInfo struct {
 	Desc *prometheus.Desc
@@ -324,7 +327,9 @@ func (e *Exporter) exportBidResponseErrors(ch chan<- prometheus.Metric) error {
 	e.totalRequests.Inc()
 
 	for _, v := range response.CalloutStatusRows {
-		e.exportMetric(ch, bidResponseErrorMetrics[int(v.CalloutStatusId)], v.ImpressionCount)
+		if err := e.exportMetric(ch, bidResponseErrorMetrics[int(v.CalloutStatusId)], v.ImpressionCount); err != nil {
+			level.Error(e.logger).Log("msg", "Error exporting metric for Bid Response Errors", "err", err, "status", v.CalloutStatusId)
+		}
 	}
 
 	return nil
@@ -341,7 +346,9 @@ func (e *Exporter) exportBidResponsesWithoutBids(ch chan<- prometheus.Metric) er
 	e.totalRequests.Inc()
 
 	for _, v := range response.BidResponseWithoutBidsStatusRows {
-		e.exportMetric(ch, bidResponsesWithoutBidsMetrics[bidResponsesWithoutBidsStatuses[v.Status].idx], v.ImpressionCount)
+		if err := e.exportMetric(ch, bidResponsesWithoutBidsMetrics[bidResponsesWithoutBidsStatuses[v.Status].idx], v.ImpressionCount); err != nil {
+			level.Error(e.logger).Log("msg", "Error exporting metric for Bid Response Without Bids", "err", err, "status", v.Status)
+		}
 	}
 
 	return nil
@@ -358,7 +365,9 @@ func (e *Exporter) exportFilteredBidRequests(ch chan<- prometheus.Metric) error 
 	e.totalRequests.Inc()
 
 	for _, v := range response.CalloutStatusRows {
-		e.exportMetric(ch, filteredBidRequestsMetrics[int(v.CalloutStatusId)], v.ImpressionCount)
+		if err := e.exportMetric(ch, filteredBidRequestsMetrics[int(v.CalloutStatusId)], v.ImpressionCount); err != nil {
+			level.Error(e.logger).Log("msg", "Error exporting metric for Filtered Bid Requests", "err", err, "status", v.CalloutStatusId)
+		}
 	}
 
 	return nil
@@ -375,7 +384,9 @@ func (e *Exporter) exportFilteredBids(ch chan<- prometheus.Metric) error {
 	e.totalRequests.Inc()
 
 	for _, v := range response.CreativeStatusRows {
-		e.exportMetric(ch, filteredBidsMetrics[int(v.CreativeStatusId)], v.BidCount)
+		if err := e.exportMetric(ch, filteredBidsMetrics[int(v.CreativeStatusId)], v.BidCount); err != nil {
+			level.Error(e.logger).Log("msg", "Error exporting metric for Filtered Bids", "err", err, "status", v.CreativeStatusId)
+		}
 	}
 
 	return nil
@@ -413,7 +424,9 @@ func (e *Exporter) exportLosingBids(ch chan<- prometheus.Metric) error {
 	e.totalRequests.Inc()
 
 	for _, v := range response.CreativeStatusRows {
-		e.exportMetric(ch, losingBidsMetrics[int(v.CreativeStatusId)], v.BidCount)
+		if err := e.exportMetric(ch, losingBidsMetrics[int(v.CreativeStatusId)], v.BidCount); err != nil {
+			level.Error(e.logger).Log("msg", "Error exporting metric for Losing Bids", "err", err, "status", v.CreativeStatusId)
+		}
 	}
 
 	return nil
@@ -430,18 +443,21 @@ func (e *Exporter) exportNonBillableWinningBids(ch chan<- prometheus.Metric) err
 	e.totalRequests.Inc()
 
 	for _, v := range response.NonBillableWinningBidStatusRows {
-		e.exportMetric(ch, nonBillableWinningBidsMetrics[nonBillableWinningBidsStatuses[v.Status].idx], v.BidCount)
+		if err := e.exportMetric(ch, nonBillableWinningBidsMetrics[nonBillableWinningBidsStatuses[v.Status].idx], v.BidCount); err != nil {
+			level.Error(e.logger).Log("msg", "Error exporting metric for Non Billable Winning Bids", "err", err, "status", v.Status)
+		}
 	}
 
 	return nil
 }
 
-func (e *Exporter) exportMetric(ch chan<- prometheus.Metric, metric metricInfo, value *adexchangebuyer.MetricValue) {
+func (e *Exporter) exportMetric(ch chan<- prometheus.Metric, metric metricInfo, value *adexchangebuyer.MetricValue) error {
 	// The Desc doesn't exist so the metric doesn't exist
 	if metric.Desc == nil {
 		e.responseParseFailures.Inc()
-		return
+		return ErrUnknownMetric
 	}
 
 	ch <- prometheus.MustNewConstMetric(metric.Desc, metric.Type, float64(value.Value))
+	return nil
 }
